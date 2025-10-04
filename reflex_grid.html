@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reflex – Chế độ Dễ/Khó</title>
+  <style>
+    :root{ --bg:#0b0f14; --panel:#121823; --text:#e6eef7 }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background: radial-gradient(1200px 600px at 70% -10%, #152033, transparent), var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Inter", Arial, "Noto Sans"}
+    .wrap{width:min(1300px,98vw); padding:16px; margin:0 auto}
+
+    /* ======== Landing (menu) ======== */
+    .landing{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; min-height:calc(100vh - 160px); padding:24px 12px 0}
+    .landing h1{margin:0; font-size:clamp(44px,8vw,86px); line-height:1.05; letter-spacing:.4px; text-align:center; color:#cbd2ff; font-weight:900; text-shadow:0 12px 40px rgba(92,131,255,.25)}
+    .landing p.sub{margin:0; text-align:center; font-size:clamp(16px,2.4vw,22px); color:#def1ff; opacity:.95}
+    .cta{display:flex; gap:14px; flex-wrap:wrap; justify-content:center}
+    .big{appearance:none; border:none; background:linear-gradient(135deg,#6ea2ff,#6df3ff); color:#08121e; padding:16px 26px; border-radius:18px; font-weight:900; cursor:pointer; font-size:clamp(16px,2.2vw,22px); box-shadow:0 16px 40px rgba(110,162,255,.28), inset 0 0 0 1px rgba(255,255,255,.22); transition:transform .15s ease, filter .2s ease}
+    .big.alt{background:linear-gradient(135deg,#7ef8ff,#76a6ff)}
+    .big:hover{transform:translateY(-2px); filter:brightness(1.04)}
+
+    /* ======== Header (in‑game) – 1 hàng + thời gian ở giữa ======== */
+    header{position:sticky; top:8px; z-index:10; display:none; background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08)), var(--panel); border:1px solid #223044; border-radius:16px; padding:10px 14px; box-shadow:0 10px 30px rgba(0,0,0,.25); backdrop-filter:blur(6px) saturate(1.05); grid-template-columns:auto 1fr auto; align-items:center; column-gap:12px; white-space:nowrap; margin:0 auto }
+    .title{font-weight:900; letter-spacing:.2px; padding-right:6px}
+    .left{display:flex; gap:10px; align-items:center}
+    .badge{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:#0f1622; border:1px solid #233449; font-weight:700}
+    .badge .dot{width:8px;height:8px;border-radius:50%}
+    .dot-level{background:#00e5ff}
+    .center{display:flex; justify-content:center}
+    .center .badge{font-variant-numeric:tabular-nums; min-width:9.2ch}
+    .controls{display:flex; gap:10px; align-items:center}
+    /* Buttons (HUD) */
+    .btn.small{padding:10px 14px; font-size:14px; border-radius:12px; background:linear-gradient(135deg,#5b6dff,#6dd6ff); color:#08121e; border:0; box-shadow:0 8px 20px rgba(93,127,255,.25); cursor:pointer; transition:transform .12s ease, box-shadow .2s ease, filter .2s ease}
+    .btn.small:hover{transform:translateY(-1px); filter:brightness(1.05); box-shadow:0 10px 24px rgba(93,127,255,.32)}
+    .btn.small:active{transform:translateY(0); filter:brightness(.98)}
+    .btn.small:focus-visible{outline:2px solid #8fd4ff; outline-offset:2px}
+
+    .btn.ghost{padding:10px 12px; font-size:14px; border-radius:12px; background:#0f1622; color:#e6eef7; border:1px solid #2d4669; cursor:pointer; transition:transform .12s ease, background .2s ease, border-color .2s ease}
+    .btn.ghost:hover{transform:translateY(-1px); background:#132034; border-color:#3a5c86}
+    .btn.ghost:active{transform:translateY(0)}
+    .btn.ghost:focus-visible{outline:2px solid #8fd4ff; outline-offset:2px}
+
+    /* Segmented difficulty */
+    .seg{display:flex; gap:2px; background:#0f1622; border:1px solid #2d4669; border-radius:12px; padding:2px}
+    .seg button{appearance:none; border:0; background:transparent; color:#e6eef7; padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer; transition:background .2s ease, transform .12s ease}
+    .seg button:hover{background:#162235}
+    .seg button:active{transform:translateY(0.5px)}
+    .seg button.on{background:linear-gradient(135deg,#5b6dff,#6dd6ff); color:#08121e}
+    .seg button.on{background:linear-gradient(135deg,#5b6dff,#6dd6ff); color:#08121e}
+
+    /* ======== Board ======== */
+    .board-outer{margin-top:12px; position:relative; display:flex; justify-content:center}
+    .board{--cols:33; --rows:22; display:none; grid-template-columns: repeat(var(--cols), minmax(0,1fr)); grid-auto-rows:1fr; gap:1.2px; padding:6px; border-radius:16px; overflow:hidden; background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08)), var(--panel); border:1px solid #1e2a3b; box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 20px 40px rgba(0,0,0,.25); transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .35s ease}
+    .board.level-in{transform:scale(1.02); opacity:.0}
+    .board.level-ready{transform:none; opacity:1}
+    .cell{display:flex; align-items:center; justify-content:center; aspect-ratio:1/1; user-select:none; background:transparent; border:none; border-radius:0; cursor:pointer; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace, "Noto Color Emoji", "Apple Color Emoji"; font-weight:400; letter-spacing:.2px; color:#cfe7ff; transition: transform .06s ease}
+    .cell:hover{transform:scale(.97)} .cell:active{transform:scale(.94)}
+    .cell.wrong{animation:buzz .25s linear}
+    @keyframes buzz{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+    .cell.hint{outline:2px solid #00e5ff; outline-offset:-2px; animation:pulse .9s ease-in-out 2}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+    canvas.fx{position:absolute; inset:0; pointer-events:none; filter:drop-shadow(0 0 6px rgba(0,0,0,.5))}
+
+    /* Mobile tweaks */
+    @media (max-width: 880px){
+      .badge{padding:5px 8px; gap:6px; font-size:13px}
+      .btn.small{padding:8px 10px; font-size:13px}
+      .seg button{padding:7px 10px; font-size:13px}
+      .board{gap:1px; padding:5px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Landing Menu -->
+    <section id="landing" class="landing">
+      <h1>Reflex</h1>
+      <p class="sub">Tìm điểm khác biệt trong đám đông. Bạn đã sẵn sàng?</p>
+      <div class="cta">
+        <button class="big" id="startEasy">Chế độ dễ</button>
+        <button class="big alt" id="startHard">Chế độ khó</button>
+      </div>
+    </section>
+
+    <!-- In‑game -->
+    <header id="hud">
+      <div class="left">
+        <div class="title">Reflex</div>
+        <div class="badge"><span class="dot-level"></span>Màn: <span id="level" class="val">1</span></div>
+        <div class="badge" id="recordBadge">Kỷ lục: <span id="recordVal" class="val">0</span></div>
+      </div>
+      <div class="center"><div class="badge" id="centerTimer">00:00:00</div></div>
+      <div class="controls">
+        <div class="seg" aria-label="Chọn độ khó">
+          <button id="btnEasy">Dễ</button>
+          <button id="btnHard" class="on">Khó</button>
+        </div>
+        <button class="btn small" id="hintBtn" title="Gợi ý (H)">Gợi ý</button>
+        <button class="btn small" id="restartBtn" title="Chơi lại (R)">Chơi lại</button>
+        <button class="btn ghost" id="soundBtn" title="Bật/Tắt âm (S)">Âm: Bật</button>
+      </div>
+    </header>
+
+    <div class="board-outer">
+      <div id="board" class="board level-in" role="grid" aria-label="Lưới trò chơi"></div>
+      <canvas id="fx" class="fx"></canvas>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+(function(){
+  // ===== Difficulty =====
+  let DIFF = localStorage.getItem('reflex_diff') || 'hard';
+  // Chế độ chỉ thay đổi kích thước lưới (Dễ: 10×15, Khó: 22×33)
+  let ROWS = DIFF==='easy'?10:22, COLS = DIFF==='easy'?15:33;
+
+  // ===== DOM =====
+  const landing = document.getElementById('landing');
+  const startEasy = document.getElementById('startEasy');
+  const startHard = document.getElementById('startHard');
+  const hud = document.getElementById('hud');
+  const boardEl = document.getElementById('board');
+  const levelEl = document.getElementById('level');
+  const centerTimerEl = document.getElementById('centerTimer');
+  const restartBtn = document.getElementById('restartBtn');
+  const hintBtn = document.getElementById('hintBtn');
+  const soundBtn = document.getElementById('soundBtn');
+  const btnEasy = document.getElementById('btnEasy');
+  const btnHard = document.getElementById('btnHard');
+  const fx = document.getElementById('fx');
+  const ctx = fx.getContext('2d');
+  const recordVal = document.getElementById('recordVal');
+
+  // ===== Sound =====
+  const Sound = (() => {
+    let actx = null; let enabled = (localStorage.getItem('reflex_sound') ?? 'on') === 'on';
+    const updateLabel = () => { soundBtn.textContent = 'Âm: ' + (enabled ? 'Bật' : 'Tắt'); };
+    function ensure(){ if(!actx){ actx = new (window.AudioContext||window.webkitAudioContext)(); } if(actx.state==='suspended') actx.resume(); }
+    function setEnabled(v){ enabled=v; localStorage.setItem('reflex_sound', v?'on':'off'); updateLabel(); if(actx){ v? actx.resume(): actx.suspend(); } }
+    function blip(freq=820, dur=0.1, type='triangle', vol=0.15){ if(!enabled) return; ensure(); const o=actx.createOscillator(); const g=actx.createGain(); o.type=type; o.frequency.value=freq; o.connect(g); g.connect(actx.destination); const t=actx.currentTime; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.02); }
+    return { ok(){ blip(900,0.09,'triangle',0.18); setTimeout(()=>blip(1350,0.08,'triangle',0.16),50); }, wrong(){ blip(280,0.08,'sawtooth',0.14); setTimeout(()=>blip(200,0.08,'sawtooth',0.12),60); }, start(){ blip(520,0.07); setTimeout(()=>blip(660,0.07),80); setTimeout(()=>blip(790,0.09),160); }, toggle(){ setEnabled(!enabled); }, isOn(){ return enabled; } };
+  })();
+
+  // ===== Data =====
+  const DEFAULT_PAIRS = [
+    // ——— DỄ ———
+    ['O','0'], ['B','8'], ['S','5'], ['G','6'], ['Z','2'], ['Q','O'], ['D','0'], ['C','G'], ['E','3'], ['T','7'],
+    ['Y','V'], ['U','V'], ['W','M'], ['N','M'], ['P','R'], ['K','X'], ['H','M'], ['M','W'], ['Z','S'], ['C','O'],
+    ['D','Q'], ['A','Δ'], ['F','E'], ['U','∪'],
+    // ——— TRƯỚC ĐÂY "TRUNG BÌNH" (đã gộp cho chế độ Dễ) ———
+    ['A','Λ'], ['V','∨'], ['Y','Ψ'], ['E','Σ'], ['H','Η'], ['M','Μ'], ['N','Ν'], ['O','Θ'], ['P','Ρ'], ['T','Τ'],
+    ['X','Χ'], ['Y','Υ'], ['Z','Ζ'], ['K','Κ'], ['B','β'], ['R','Я'], ['C','Ϲ'], ['S','§'], ['Z','Σ'], ['E','∊'],
+    ['U','⋃'], ['V','⋁'], ['A','∀'], ['N','∩'], ['W','Ш'], ['M','Ѫ'], ['H','Н'], ['K','К'], ['P','Þ'], ['E','Є'],
+    ['F','Ғ'], ['R','ʀ'], ['Q','Ф'], ['D','Ð'], ['C','₵'], ['S','$'], ['Z','Ƶ'], ['G','₲'], ['X','✕'], ['Y','¥'],
+    // ——— KHÓ ———
+    ['a','ɑ'], ['e','ε'], ['o','ο'], ['c','ϲ'], ['p','ρ'], ['n','η'], ['v','ν'], ['u','υ'], ['k','κ'], ['x','×'],
+    ['y','γ'], ['d','δ'], ['t','τ'], ['m','м'], ['h','ℎ'], ['w','ω'], ['s','ʂ'], ['r','г'], ['q','φ'], ['b','Ь'],
+    ['a','α'], ['e','є'], ['o','ɵ'], ['c','ς'], ['p','р'], ['n','ŉ'], ['v','ѵ'], ['u','ʋ'], ['k','қ'], ['x','χ'],
+    ['y','ɣ'], ['d','ȡ'], ['t','ț'], ['m','ṃ'], ['h','ħ'], ['w','ɯ'], ['s','ʃ'], ['r','ř'], ['q','ҁ'], ['b','Ƅ']
+  ];
+
+  // ===== State =====
+  const cells = [];
+  let level = 1, gameStartTime = 0, targetIndex = -1;
+  const total = () => ROWS*COLS;
+
+  // ===== Time utils =====
+  const pad2 = n => String(n).padStart(2,'0');
+  const fmtHMS = ms => { const s = Math.floor(ms/1000); const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60); const sec = s%60; return `${pad2(h)}:${pad2(m)}:${pad2(sec)}`; };
+
+  // Timer
+  let playing = false; let rafId = 0;
+  function tick(){ if(!playing) return; const now = performance.now(); if(gameStartTime){ centerTimerEl.textContent = fmtHMS(now - gameStartTime); } rafId = requestAnimationFrame(tick); }
+
+  function fitCanvas(){
+    const wrapW = document.querySelector('.wrap').clientWidth;
+    const headerH = hud.offsetHeight + 24;
+    const availH = Math.max(200, window.innerHeight - headerH - 24);
+    const targetW = Math.min(wrapW, Math.floor(availH * (COLS/ROWS)));
+    boardEl.style.width = targetW + 'px';
+    const rect = boardEl.getBoundingClientRect();
+    // match header width to board width for perfect alignment
+    hud.style.width = rect.width + 'px';
+    // devicePixelRatio-aware canvas sizing
+    const dpr = window.devicePixelRatio || 1;
+    fx.style.width = rect.width + 'px';
+    fx.style.height = rect.height + 'px';
+    fx.width = Math.max(1, Math.floor(rect.width * dpr));
+    fx.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', fitCanvas, {passive:true});
+
+  function burstAt(cell){
+    const containerRect = fx.getBoundingClientRect(); const rect = cell.getBoundingClientRect();
+    const cx = rect.left + rect.width/2 - containerRect.left; const cy = rect.top + rect.height/2 - containerRect.top;
+    const particles = []; const count = 36;
+    for(let i=0;i<count;i++){ const angle = (i / count) * Math.PI * 2; particles.push({x: cx, y: cy, vx: Math.cos(angle) * (2 + Math.random()*2), vy: Math.sin(angle) * (2 + Math.random()*2), life: 22 + Math.random()*12, r: 2 + Math.random()*2}); }
+    let t = 0; (function step(){ t++; ctx.clearRect(0,0,fx.width,fx.height); ctx.globalCompositeOperation = 'lighter';
+      for(const p of particles){ p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.life -= 1; ctx.globalAlpha = Math.max(0, p.life/30); ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fillStyle = (t % 2) ? '#69f0ae' : '#00e5ff'; ctx.fill(); }
+      ctx.globalAlpha = 1; if (particles.some(p=>p.life>0)) requestAnimationFrame(step); else ctx.clearRect(0,0,fx.width,fx.height);
+    })();
+  }
+
+  function buildBoard(){
+    cells.length = 0; boardEl.innerHTML = '';
+    boardEl.style.setProperty('--cols', COLS); boardEl.style.setProperty('--rows', ROWS);
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<total();i++){
+      const d = document.createElement('button'); d.className = 'cell'; d.setAttribute('role','gridcell'); d.dataset.idx = i; d.addEventListener('click', onCellClick); frag.appendChild(d); cells.push(d);
+    }
+    boardEl.appendChild(frag); fitCanvas();
+  }
+
+  function randPairByLevel(){
+    // Dễ/Khó dùng chung bộ ký tự; chỉ khác ROWS/COLS
+    const pool = DEFAULT_PAIRS;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  function fontSizeForViewport(){ const rect = boardEl.getBoundingClientRect(); const gap = parseFloat(getComputedStyle(boardEl).gap || 1.2); const cellW = (rect.width - (COLS-1)*gap) / COLS; return Math.max(9, Math.min(26, Math.floor(cellW * 0.72))); }
+
+  function setupLevel(){
+    boardEl.classList.add('level-in');
+    setTimeout(() => {
+      const [base, odd] = randPairByLevel(); targetIndex = Math.floor(Math.random() * total()); const fs = fontSizeForViewport();
+      for(let i=0;i<total();i++){
+        const c = cells[i]; c.classList.remove('hint','wrong'); c.style.fontSize = fs + 'px'; c.textContent = (i === targetIndex) ? odd : base; c.style.color = '#cfe7ff';
+      }
+      boardEl.classList.remove('level-in'); void boardEl.offsetWidth; boardEl.classList.add('level-ready');
+      Sound.start();
+    }, 110);
+  }
+
+  function nextLevel(){ level++; levelEl.textContent = String(level); maybeUpdateRecord(); setupLevel(); }
+
+  function onCellClick(e){
+    const idx = Number(e.currentTarget.dataset.idx);
+    if (idx === targetIndex){ Sound.ok(); burstAt(e.currentTarget); boardEl.classList.remove('level-ready'); boardEl.classList.add('level-in'); setTimeout(()=> nextLevel(), 160);
+    } else { e.currentTarget.classList.remove('wrong'); void e.currentTarget.offsetWidth; e.currentTarget.classList.add('wrong'); Sound.wrong(); }
+  }
+
+  function showHint(){ if (targetIndex < 0) return; const target = cells[targetIndex]; target.classList.remove('hint'); void target.offsetWidth; target.classList.add('hint'); }
+
+  function restart(){ level = 1; levelEl.textContent = '1'; centerTimerEl.textContent='00:00:00'; buildBoard(); playing = true; gameStartTime = performance.now(); if(rafId) cancelAnimationFrame(rafId); rafId = requestAnimationFrame(tick); updateRecordUI(); setupLevel(); }
+
+  function setDifficulty(mode, doRestart=true){ DIFF = mode; localStorage.setItem('reflex_diff', mode); if(mode==='easy'){ ROWS=10; COLS=15; btnEasy.classList.add('on'); btnHard.classList.remove('on'); } else { ROWS=22; COLS=33; btnHard.classList.add('on'); btnEasy.classList.remove('on'); } updateRecordUI(); if(doRestart && hud.style.display!=='none'){ restart(); } }
+
+  function startGame(mode){ if(mode){ setDifficulty(mode,false); } landing.style.display='none'; hud.style.display='grid'; boardEl.style.display='grid'; updateRecordUI(); restart(); }
+
+  // ===== Record helpers =====
+  const recordKey = () => 'reflex_record_' + DIFF;
+  const getRecord = () => Number(localStorage.getItem(recordKey())||0);
+  function updateRecordUI(){ recordVal.textContent = String(getRecord()); }
+  function maybeUpdateRecord(){ const cur = getRecord(); if(level>cur){ localStorage.setItem(recordKey(), String(level)); updateRecordUI(); } }
+
+  // ===== Bindings =====
+  startEasy.addEventListener('click', ()=> startGame('easy'));
+  startHard.addEventListener('click', ()=> startGame('hard'));
+  btnEasy.addEventListener('click', ()=> setDifficulty('easy'));
+  btnHard.addEventListener('click', ()=> setDifficulty('hard'));
+  restartBtn.addEventListener('click', restart);
+  hintBtn.addEventListener('click', showHint);
+  soundBtn.addEventListener('click', ()=> Sound.toggle());
+  window.addEventListener('resize', () => { fitCanvas(); const fs = fontSizeForViewport(); for(const c of cells) c.style.fontSize = fs + 'px'; });
+  window.addEventListener('keydown', (e)=>{ if(e.key==='r' || e.key==='R') restart(); if(e.key==='h' || e.key==='H') showHint(); if(e.key==='s' || e.key==='S') Sound.toggle(); if(e.key==='Enter' && landing.style.display!=='none') startGame(DIFF); });
+
+  // init UI
+  setDifficulty(DIFF,false);
+  updateRecordUI();
+})();
+});
+</script>
+</body>
+</html>
