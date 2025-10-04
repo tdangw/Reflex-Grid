@@ -212,9 +212,9 @@ const EXTENDED_PAIRS = [
     ['d', 'b'], 
     // --- Emoji & Biểu Tượng Tinh Tế (Đã lọc) ---
     ['🌸', '💮'], ['🌺', '🪷'], ['⭐', '🌟'], ['💫', '✨'], 
-    ['❓', '❔'], ['❗', '❕'], ['👀', '👁️'], ['😀', '😁'], 
-    ['😂', '🤣'], ['❤️', '🧡'], ['🛑', '⛔'], ['0️⃣', '🅾️'],
-    ['©️', '℗'], ['™️', '®️'],
+    ['👀', '👁️'], ['😀', '😁'], 
+    ['😂', '🤣'], ['❤️', '🧡'], ['🛑', '⛔'],
+    ['©️', '®️'],
 ];
   // ===== State =====
   const cells = [];
@@ -271,7 +271,7 @@ const EXTENDED_PAIRS = [
 
   function randPairByLevel(){
     // Dễ/Khó dùng chung bộ ký tự; chỉ khác ROWS/COLS
-    const pool = DEFAULT_PAIRS;
+    const pool = EXTENDED_PAIRS;
     return pool[Math.floor(Math.random()*pool.length)];
   }
 
